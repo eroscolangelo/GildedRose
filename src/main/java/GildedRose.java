@@ -38,28 +38,54 @@ public class GildedRose {
     }
 
     public static void updateQualityOnItem(Item currentItem) {
-        if ((!"Aged Brie".equals(currentItem.getName())) && !"Backstage passes to a TAFKAL80ETC concert".equals(currentItem.getName()))
+
+        CounjuredProcessor conjuredProcessor = new CounjuredProcessor();
+        if(conjuredProcessor.isSatisfiedBy(currentItem)){
+            conjuredProcessor.updateQuality(currentItem);
+            conjuredProcessor.updateSellIn(currentItem);
+            return;
+        }
+
+        AgedBrieProcessor agedBrieProcessor = new AgedBrieProcessor();
+        if(agedBrieProcessor.isSatisfiedBy(currentItem)){
+            agedBrieProcessor.updateQuality(currentItem);
+            agedBrieProcessor.updateSellIn(currentItem);
+            return;
+        }
+
+
+        if (!"Backstage passes to a TAFKAL80ETC concert".equals(currentItem.getName()))
         {
             if (currentItem.getQuality() > 0)
             {
-                if("Conjured".equals(currentItem.getName())){
-                    currentItem.setQuality(currentItem.getQuality() - 2);
-                } else
                 if (!"Sulfuras, Hand of Ragnaros".equals(currentItem.getName()))
                 {
                     currentItem.setQuality(currentItem.getQuality() - 1);
                 }
             }
         }
-        else
-        {
+        else {
             if (currentItem.getQuality() < 50)
             {
                 currentItem.setQuality(currentItem.getQuality() + 1);
 
                 if ("Backstage passes to a TAFKAL80ETC concert".equals(currentItem.getName()))
                 {
-                    updateQualityOnBackstage(currentItem);
+                    if (currentItem.getSellIn() < 11)
+                    {
+                        if (currentItem.getQuality() < 50)
+                        {
+                            currentItem.setQuality(currentItem.getQuality() + 1);
+                        }
+                    }
+
+                    if (currentItem.getSellIn() < 6)
+                    {
+                        if (currentItem.getQuality() < 50)
+                        {
+                            currentItem.setQuality(currentItem.getQuality() + 1);
+                        }
+                    }
                 }
             }
         }
@@ -77,7 +103,7 @@ public class GildedRose {
                 {
                     if (currentItem.getQuality() > 0)
                     {
-                        if (!"Sulfuras, Hand of Ragnaros".equals(currentItem.getName())&& !"Conjured".equals(currentItem.getName()))
+                        if (!"Sulfuras, Hand of Ragnaros".equals(currentItem.getName()))
                         {
                             currentItem.setQuality(currentItem.getQuality() - 1);
                         }
@@ -100,44 +126,63 @@ public class GildedRose {
 
     }
 
-    private static void updateQualityOnBackstage(Item currentItem) {
-        if (currentItem.getSellIn() < 11)
-        {
-            if (currentItem.getQuality() < 50)
-            {
-                currentItem.setQuality(currentItem.getQuality() + 1);
-            }
-        }
-
-        if (currentItem.getSellIn() < 6)
-        {
-            if (currentItem.getQuality() < 50)
-            {
-                currentItem.setQuality(currentItem.getQuality() + 1);
-            }
-        }
-    }
 
 }
 
-interface ItemUpdater{
+interface ItemProcessor {
 
     public boolean  isSatisfiedBy(Item item);
 
     public void updateQuality(Item item);
 
-
+    public void updateSellIn(Item item);
 
 }
 
-class BasicItemUpdater implements ItemUpdater{
+
+class AgedBrieProcessor extends BaseItemProcessor {
     @Override
     public boolean isSatisfiedBy(Item item) {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return "Aged Brie".equals(item.getName());
     }
 
     @Override
     public void updateQuality(Item item) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        if(item.getQuality()<50){
+            item.setQuality(item.getQuality()+1);
+            if(item.getSellIn()<=0){
+                item.setQuality(item.getQuality()+1);
+            }
+        }
     }
 }
+
+abstract class BaseItemProcessor implements ItemProcessor{
+    @Override
+    public abstract boolean isSatisfiedBy(Item item);
+
+    @Override
+    public void updateQuality(Item item) {
+        item.setQuality(item.getQuality()-1);
+    }
+
+    @Override
+    public void updateSellIn(Item item) {
+        item.setSellIn(item.getSellIn() - 1);
+    }
+}
+
+class CounjuredProcessor extends BaseItemProcessor{
+    @Override
+    public boolean isSatisfiedBy(Item item) {
+        return "Conjured".equals(item.getName());
+    }
+
+    @Override
+    public void updateQuality(Item item) {
+        if(item.getQuality()>0)item.setQuality(item.getQuality()-2);
+    }
+
+
+}
+
